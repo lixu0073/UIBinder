@@ -8,13 +8,22 @@ using UnityEngine.UI;
 
 public partial class UIBinderTest : MonoBehaviour
 {
-    [AutoBind(nameof(btnBack))] private Button btnBack;
+    [AutoBind(nameof(txtStatus))] private TMP_Text txtStatus;
+    [AutoBind(nameof(txtTitleUGUI))] private TextMeshProUGUI txtTitleUGUI;
+    [AutoBind(nameof(txtLegacy))] private Text txtLegacy;
+    [AutoBind(nameof(imgIcon))] private Image imgIcon;
+    [AutoBind(nameof(rectContentRoot))] private RectTransform rectContentRoot;
+    [AutoBind(nameof(canvasGroupPanel))] private CanvasGroup canvasGroupPanel;
+
+    //[AutoBind(nameof(btnBack))] private Button btnBack; // 方法绑定了btnBack这里也可以省略不写
+    [AutoBind] private Button btnBack; // == [AutoBind(nameof(btnBack))]
     [AutoBind(nameof(togMute))] private Toggle togMute;
     [AutoBind(nameof(sliderVolume))] private Slider sliderVolume;
     [AutoBind(nameof(scrollViewBar))] private Scrollbar scrollViewBar;
     [AutoBind(nameof(inputPlayerName))] private TMP_InputField inputPlayerName;
     [AutoBind(nameof(dpLanguage))] private TMP_Dropdown dpLanguage;
     [AutoBind(nameof(srvBagList))] private ScrollRect srvBagList;
+
 
     List<DefaultScrollItemData> testData = new List<DefaultScrollItemData>();
 
@@ -23,6 +32,13 @@ public partial class UIBinderTest : MonoBehaviour
 
     private void Start()
     {
+        txtStatus.text = "TMP_Text test";
+        txtTitleUGUI.text = "TextMeshProUGUI test";
+        txtLegacy.text = "txtLegacy test";
+        imgIcon.color = Color.green;
+        rectContentRoot.sizeDelta = new Vector2(400, 100);
+        canvasGroupPanel.alpha = 0.3f;
+
         roleList.SetItemCountFunc(itemCountFunc);
         roleList.SetUpdateFunc(updateFunc);
         roleList.SetItemSizeFunc(itemSizeFunc);
@@ -134,11 +150,9 @@ public partial class UIBinderTest : MonoBehaviour
     }
     #endregion
 
-    [Auto.Button("btnBack")]
-    private void OnBackButtonClick()
-    {
-        Debug.Log("[Test] Button Clicked: 成功回退上级页面。");
-    }
+
+    //[OnClick("btnBack")]
+    [Auto.Button(nameof(btnBack))] private void OnBackButtonClick() => Debug.Log("[Test] Button Clicked: 成功回退上级页面。");
 
     [Auto.Toggle("togMute")]
     private void OnMuteStatusChanged(bool isMute)

@@ -31,7 +31,7 @@
 
 #if UNITY_EDITOR
         [Header("运行时绑定快照")]
-        [BindingListLabel("gameObjectName")]
+        [BindingListLabel("displayName")]
         [SerializeField] private List<UIBinderAuto.BindingInfo> activeBindings = new List<UIBinderAuto.BindingInfo>();
 #endif
 
@@ -331,19 +331,37 @@
                 string goName = targetField.stringValue;
 
                 SerializedProperty typeField = property.FindPropertyRelative("bindComponentType");
+                SerializedProperty componentTypeNameField = property.FindPropertyRelative("componentTypeName");
                 SerializedProperty methodField = property.FindPropertyRelative("callbackMethodName");
-
+ 
                 string typeStr = "[Unknown]";
 
-                if (typeField != null)
+                if (componentTypeNameField != null && !string.IsNullOrEmpty(componentTypeNameField.stringValue))
+                {
+                    typeStr = $"[{componentTypeNameField.stringValue}]";
+                } else if (typeField != null)
                 {
                     string enumName = typeField.enumDisplayNames[typeField.enumValueIndex];
                     typeStr = $"[{enumName}]";
                 }
 
-                string methodStr = methodField != null
-                    ? $" -> {methodField.stringValue}()"
-                    : "";
+                bool isFieldBinding = false;
+
+                if (typeField != null)
+                {
+                    string enumName = typeField.enumNames[typeField.enumValueIndex];
+                    if (Enum.TryParse(enumName, out UIBinderAuto.BindComponetType bindType))
+                    {
+                        isFieldBinding = UIBinderAuto.IsFieldBinding(bindType);
+                    }
+                }
+
+                string methodStr = "";
+
+                if (!isFieldBinding && methodField != null && !string.IsNullOrEmpty(methodField.stringValue))
+                {
+                    methodStr = $" -> {methodField.stringValue}()";
+                }
 
                 label.text = string.IsNullOrEmpty(goName)
                     ? "Empty Node"

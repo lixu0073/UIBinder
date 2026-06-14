@@ -13,6 +13,17 @@
         public enum BindComponetType
         {
             None,
+
+            // 字段绑定
+            Component,
+            Text,
+            TMP_Text,
+            TextMeshProUGUI,
+            Image,
+            RectTransform,
+            CanvasGroup,
+
+            // 事件绑定
             Button,
             Toggle,
             Slider,
@@ -21,15 +32,22 @@
             TMP_InputField,
             Dropdown,
             TMP_Dropdown,
-            ScrollRect
+            ScrollRect,
+
+            // 外部重写的UGUI
+            Adapter
         }
 
         [Serializable]
         public struct BindingInfo
         {
             public BindComponetType bindComponentType;
+
+            public string displayName;
             public string gameObjectName;
+            public string componentTypeName;
             public string callbackMethodName;
+
             public Component componentInstance;
         }
 
@@ -201,15 +219,25 @@
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        private void AddBindingsInfo(BindComponetType type, string goName, string methodName, Component comp)
+        private void AddBindingsInfo(BindComponetType type, string goName, string memberName, Component comp)
         {
 #if UNITY_EDITOR
-            if (!string.IsNullOrEmpty(methodName) && methodName.Contains("<"))
+            if (!string.IsNullOrEmpty(memberName) && memberName.Contains("<"))
             {
-                methodName = "#<Lambda>";
+                memberName = "#<Lambda>";
             }
 
-            _bindingsInfo.Add(new BindingInfo { bindComponentType = type, gameObjectName = goName, callbackMethodName = methodName, componentInstance = comp });
+            string componentTypeName = comp != null ? comp.GetType().Name : "null";
+            var displayName = IsFieldBinding(type) ? $"{goName}" : $"{goName} | {memberName}";
+
+            _bindingsInfo.Add(new BindingInfo {
+                bindComponentType = type,
+                gameObjectName = goName,
+                componentTypeName = componentTypeName,
+                callbackMethodName = memberName,
+                componentInstance = comp,
+                displayName = displayName
+            });
 #endif
         }
 
@@ -353,8 +381,53 @@
                 if (comp == null) continue;
 
                 field.SetValue(targetOwner, comp);
+
+                BindComponetType bindType = GetBindComponentType(comp);
+                if (IsFieldBinding(bindType))
+                {
+                    AddBindingsInfo(bindType, targetNode.gameObject.name, field.Name, comp);
+                }
             }
         }
+
+        public static bool IsFieldBinding(BindComponetType type)
+        {
+            switch (type)
+            {
+                // 这些没有事件绑定，字段绑定需要显示
+                case BindComponetType.Text:
+                case BindComponetType.TMP_Text:
+                case BindComponetType.TextMeshProUGUI:
+                case BindComponetType.Image:
+                case BindComponetType.RectTransform:
+                case BindComponetType.CanvasGroup:
+                case BindComponetType.Component:
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        private static BindComponetType GetBindComponentType(Component comp) => comp switch {
+            TextMeshProUGUI => BindComponetType.TextMeshProUGUI,
+            TMP_Text => BindComponetType.TMP_Text,
+            Text => BindComponetType.Text,
+            Image => BindComponetType.Image,
+            RectTransform => BindComponetType.RectTransform,
+            CanvasGroup => BindComponetType.CanvasGroup,
+            Button => BindComponetType.Button,
+            Toggle => BindComponetType.Toggle,
+            Slider => BindComponetType.Slider,
+            Scrollbar => BindComponetType.Scrollbar,
+            TMP_InputField => BindComponetType.TMP_InputField,
+            InputField => BindComponetType.InputField,
+            TMP_Dropdown => BindComponetType.TMP_Dropdown,
+            Dropdown => BindComponetType.Dropdown,
+            ScrollRect => BindComponetType.ScrollRect,
+            null => BindComponetType.None,
+            _ => BindComponetType.Component
+        };
 
         private void AutoInjectMethods(object targetOwner, Type ownerType, TypeBindMeta meta)
         {
