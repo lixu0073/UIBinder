@@ -155,8 +155,13 @@ private void OnRoleListScroll(Vector2 position)
 
 字段绑定支持常用 `UGUI`、`TextMeshPro` 组件以及自定义组件。
 
+## 支持的常用组件
+
+字段绑定支持常用 `UGUI`、`TextMeshPro` 组件以及自定义组件。
+
 ### UGUI 组件
 
+```csharp
 [AutoBind] private Button btnBack;
 [AutoBind] private Toggle togMute;
 [AutoBind] private Slider sliderVolume;
@@ -168,29 +173,37 @@ private void OnRoleListScroll(Vector2 position)
 [AutoBind] private Image imgIcon;
 [AutoBind] private RectTransform rectContentRoot;
 [AutoBind] private CanvasGroup canvasGroupPanel;
+```
 
 ### TextMeshPro 组件
 
+```csharp
 [AutoBind] private TMP_Text txtStatus;
 [AutoBind] private TextMeshProUGUI txtTitleUGUI;
 [AutoBind] private TMP_InputField inputPlayerName;
 [AutoBind] private TMP_Dropdown dpLanguage;
+```
 
 ### 自定义组件
 
+```csharp
 [AutoBind] private ScrollView roleList;
+```
 
 ### 使用 `nameof` 绑定
 
+```csharp
 [AutoBind(nameof(txtStatus))] private TMP_Text txtStatus;
 [AutoBind(nameof(txtTitleUGUI))] private TextMeshProUGUI txtTitleUGUI;
 [AutoBind(nameof(txtLegacy))] private Text txtLegacy;
 [AutoBind(nameof(imgIcon))] private Image imgIcon;
 [AutoBind(nameof(rectContentRoot))] private RectTransform rectContentRoot;
 [AutoBind(nameof(canvasGroupPanel))] private CanvasGroup canvasGroupPanel;
+```
 
 ## 完整示例
 
+```csharp
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -266,6 +279,7 @@ public partial class UIBinderTest : MonoBehaviour
     {
     }
 }
+```
 
 ## 注意事项
 
