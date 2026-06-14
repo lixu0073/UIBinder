@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Text;
 using GuiSolution.ScrollView;
 using GuiSolution.UIBinder;
@@ -17,12 +17,12 @@ public partial class UIBinderTest : MonoBehaviour
 
     //[AutoBind(nameof(btnBack))] private Button btnBack; // 方法绑定了btnBack这里也可以省略不写
     [AutoBind] private Button btnBack; // == [AutoBind(nameof(btnBack))]
-    [AutoBind(nameof(togMute))] private Toggle togMute;
-    [AutoBind(nameof(sliderVolume))] private Slider sliderVolume;
-    [AutoBind(nameof(scrollViewBar))] private Scrollbar scrollViewBar;
-    [AutoBind(nameof(inputPlayerName))] private TMP_InputField inputPlayerName;
+    //[AutoBind(nameof(togMute))] private Toggle togMute;
+    //[AutoBind(nameof(sliderVolume))] private Slider sliderVolume;
+    //[AutoBind(nameof(scrollViewBar))] private Scrollbar scrollViewBar;
+    //[AutoBind(nameof(inputPlayerName))] private TMP_InputField inputPlayerName;
     [AutoBind(nameof(dpLanguage))] private TMP_Dropdown dpLanguage;
-    [AutoBind(nameof(srvBagList))] private ScrollRect srvBagList;
+    //[AutoBind(nameof(srvBagList))] private ScrollRect srvBagList;
 
 
     List<DefaultScrollItemData> testData = new List<DefaultScrollItemData>();

@@ -6,6 +6,7 @@ namespace GuiSolution.UIBinder.Editor
     using System.IO;
     using System.Reflection;
     using System.Text;
+    using System.Text.RegularExpressions;
     using UnityEditor;
     using UnityEngine;
 
@@ -17,6 +18,14 @@ namespace GuiSolution.UIBinder.Editor
         [MenuItem(MenuPath)]
         public static void GenerateAll()
         {
+            if (!EditorUtility.DisplayDialog( "UIBinder Generate",
+                "生成绑定代码前会自动把需要生成的 UI 脚本改成 partial class，是否继续？",
+                "继续",
+                "取消"))
+            {
+                return;
+            }
+
             if (!Directory.Exists(OutputDir)) Directory.CreateDirectory(OutputDir);
 
             foreach (string oldFile in Directory.GetFiles(OutputDir, "*.UIBind.g.cs", SearchOption.TopDirectoryOnly))
@@ -32,6 +41,12 @@ namespace GuiSolution.UIBinder.Editor
                 BindClassInfo info = Collect(type);
                 if (!info.HasAnyBinding) continue;
 
+                if (!EnsureSourceClassIsPartial(type))
+                {
+                    Debug.LogError($"<color=lime>[UIBinderCodeGenerator]</color> {type.FullName} 自动添加 partial 失败，跳过生成。");
+                    continue;
+                }
+
                 string code = GenerateCode(info);
                 string path = Path.Combine(OutputDir, type.FullName.Replace('.', '_').Replace('+', '_') + ".UIBind.g.cs");
                 File.WriteAllText(path, code, new UTF8Encoding(false));
@@ -40,6 +55,122 @@ namespace GuiSolution.UIBinder.Editor
 
             AssetDatabase.Refresh();
             Debug.Log($"<color=lime>[UIBinderCodeGenerator]</color> Generate finished. Count: {count}. Output: {OutputDir}");
+        }
+
+        private static bool EnsureSourceClassIsPartial(Type type)
+        {
+            if (type == null)
+            {
+                return false;
+            }
+
+            string scriptPath = GetMonoScriptPath(type);
+            if (string.IsNullOrEmpty(scriptPath))
+            {
+                Debug.LogError($"<color=lime>[UIBinderCodeGenerator]</color> 找不到 {type.FullName} 对应的 MonoScript。");
+                return false;
+            }
+
+            if (!scriptPath.StartsWith("Assets/", StringComparison.Ordinal))
+            {
+                Debug.LogError($"<color=lime>[UIBinderCodeGenerator]</color> {type.FullName} 脚本不在 Assets 下，不能自动修改：{scriptPath}");
+                return false;
+            }
+
+            string fullPath = Path.GetFullPath(scriptPath);
+            if (!File.Exists(fullPath))
+            {
+                Debug.LogError($"<color=lime>[UIBinderCodeGenerator]</color> 源文件不存在：{scriptPath}");
+                return false;
+            }
+
+            string code = File.ReadAllText(fullPath, Encoding.UTF8);
+
+            if (IsClassAlreadyPartial(code, type.Name))
+            {
+                return true;
+            }
+
+            string patched = AddPartialToClassDeclaration(code, type.Name, out bool changed);
+
+            if (!changed)
+            {
+                Debug.LogError($"<color=lime>[UIBinderCodeGenerator]</color> 无法在 {scriptPath} 中定位 class {type.Name}，请手动改为 partial class。");
+                return false;
+            }
+
+            File.WriteAllText(fullPath, patched, new UTF8Encoding(false));
+            Debug.Log($"<color=lime>[UIBinderCodeGenerator]</color> 已自动添加 partial：{type.FullName} -> {scriptPath}");
+
+            return true;
+        }
+
+        private static string GetMonoScriptPath(Type type)
+        {
+            MonoScript[] scripts = MonoImporter.GetAllRuntimeMonoScripts();
+
+            for (int i = 0; i < scripts.Length; i++)
+            {
+                MonoScript script = scripts[i];
+                if (script == null)
+                {
+                    continue;
+                }
+
+                Type scriptType = script.GetClass();
+                if (scriptType != type)
+                {
+                    continue;
+                }
+
+                return AssetDatabase.GetAssetPath(script);
+            }
+
+            return null;
+        }
+
+        private static bool IsClassAlreadyPartial(string code, string typeName)
+        {
+            if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(typeName))
+            {
+                return false;
+            }
+
+            string pattern = $@"\bpartial\s+class\s+{Regex.Escape(typeName)}\b";
+            return Regex.IsMatch(code, pattern);
+        }
+
+        // 自动插入partial
+        private static string AddPartialToClassDeclaration(string code, string typeName, out bool changed)
+        {
+            changed = false;
+
+            if (string.IsNullOrEmpty(code) || string.IsNullOrEmpty(typeName))
+            {
+                return code;
+            }
+
+            string pattern = $@"(?m)^(?<indent>\s*)" +
+                $@"(?<modifiers>(?:(?:public|internal|protected|private|abstract|sealed|static|unsafe|new|partial)\s+)*)" +
+                $@"class\s+{Regex.Escape(typeName)}\b";
+
+            Match match = Regex.Match(code, pattern);
+            if (!match.Success)
+            {
+                return code;
+            }
+
+            string modifiers = match.Groups["modifiers"].Value;
+            if (modifiers.Contains("partial "))
+            {
+                return code;
+            }
+
+            string replacement = match.Groups["indent"].Value + modifiers + "partial class " + typeName;
+
+            changed = true;
+
+            return code.Substring(0, match.Index) + replacement + code.Substring(match.Index + match.Length);
         }
 
         private static bool CanGenerate(Type type)
