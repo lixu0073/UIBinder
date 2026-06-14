@@ -26,8 +26,6 @@ Tools/UIBinder/Generate Binding Code
 [MenuItem("Tools/UIBinder/Generate Binding Code")]
 ```
 
-> 代码生成依赖 `partial`，需要将对应的 UI 脚本手动改为 `partial class`。
-
 示例：
 
 ```csharp
