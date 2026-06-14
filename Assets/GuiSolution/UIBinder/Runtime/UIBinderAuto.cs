@@ -5,6 +5,7 @@
     using System.Reflection;
     using TMPro;
     using UnityEngine;
+    using UnityEngine.Events;
     using UnityEngine.UI;
 
     public class UIBinderAuto
@@ -16,10 +17,13 @@
 
             // 字段绑定
             Component,
+            Graphic,
+            MaskableGraphic,
             Text,
             TMP_Text,
             TextMeshProUGUI,
             Image,
+            RawImage,
             RectTransform,
             CanvasGroup,
 
@@ -51,15 +55,15 @@
             public Component componentInstance;
         }
 
-        private readonly List<(Button btn, Action act)> _buttonBindings = new List<(Button, Action)>();
-        private readonly List<(Toggle tog, Action<bool> act)> _toggleBindings = new List<(Toggle, Action<bool>)>();
-        private readonly List<(Slider sld, Action<float> act)> _sliderBindings = new List<(Slider, Action<float>)>();
-        private readonly List<(Scrollbar sbr, Action<float> act)> _scrollbarBindings = new List<(Scrollbar, Action<float>)>();
-        private readonly List<(InputField field, Action<string> act, bool isEndEdit)> _inputBindings = new List<(InputField, Action<string>, bool)>();
-        private readonly List<(TMP_InputField field, Action<string> act, bool isEndEdit)> _tmpInputBindings = new List<(TMP_InputField, Action<string>, bool)>();
-        private readonly List<(Dropdown dp, Action<int> act)> _dropdownBindings = new List<(Dropdown, Action<int>)>();
-        private readonly List<(TMP_Dropdown dp, Action<int> act)> _tmpDropdownBindings = new List<(TMP_Dropdown, Action<int>)>();
-        private readonly List<(ScrollRect srt, Action<Vector2> act)> _scrollRectBindings = new List<(ScrollRect, Action<Vector2>)>();
+        private readonly List<(Button btn, UnityAction act)> _buttonBindings = new List<(Button, UnityAction)>();
+        private readonly List<(Toggle tog, UnityAction<bool> act)> _toggleBindings = new List<(Toggle, UnityAction<bool>)>();
+        private readonly List<(Slider sld, UnityAction<float> act)> _sliderBindings = new List<(Slider, UnityAction<float>)>();
+        private readonly List<(Scrollbar sbr, UnityAction<float> act)> _scrollbarBindings = new List<(Scrollbar, UnityAction<float>)>();
+        private readonly List<(InputField field, UnityAction<string> act, bool isEndEdit)> _inputBindings = new List<(InputField, UnityAction<string>, bool)>();
+        private readonly List<(TMP_InputField field, UnityAction<string> act, bool isEndEdit)> _tmpInputBindings = new List<(TMP_InputField, UnityAction<string>, bool)>();
+        private readonly List<(Dropdown dp, UnityAction<int> act)> _dropdownBindings = new List<(Dropdown, UnityAction<int>)>();
+        private readonly List<(TMP_Dropdown dp, UnityAction<int> act)> _tmpDropdownBindings = new List<(TMP_Dropdown, UnityAction<int>)>();
+        private readonly List<(ScrollRect srt, UnityAction<Vector2> act)> _scrollRectBindings = new List<(ScrollRect, UnityAction<Vector2>)>();
         private readonly List<(Component component, IUIBindEventAdapter adapter, Delegate callback, object option)> _adapterBindings = new List<(Component, IUIBindEventAdapter, Delegate, object)>();
 
         private readonly Transform _rootTransform;
@@ -100,10 +104,12 @@
         {
             if (button == null || callback == null) return;
 
-            button.onClick.RemoveListener(callback.Invoke);
-            button.onClick.AddListener(callback.Invoke);
+            UnityAction unityCallback = callback.Invoke;
 
-            _buttonBindings.Add((button, callback));
+            button.onClick.RemoveListener(unityCallback);
+            button.onClick.AddListener(unityCallback);
+
+            _buttonBindings.Add((button, unityCallback));
 
             AddBindingsInfo(BindComponetType.Button, button.gameObject.name, callback.Method.Name, button);
         }
@@ -112,10 +118,12 @@
         {
             if (toggle == null || callback == null) return;
 
-            toggle.onValueChanged.RemoveListener(callback.Invoke);
-            toggle.onValueChanged.AddListener(callback.Invoke);
+            UnityAction<bool> unityCallback = callback.Invoke;
 
-            _toggleBindings.Add((toggle, callback));
+            toggle.onValueChanged.RemoveListener(unityCallback);
+            toggle.onValueChanged.AddListener(unityCallback);
+
+            _toggleBindings.Add((toggle, unityCallback));
 
             AddBindingsInfo(BindComponetType.Toggle, toggle.gameObject.name, callback.Method.Name, toggle);
         }
@@ -124,10 +132,12 @@
         {
             if (slider == null || callback == null) return;
 
-            slider.onValueChanged.RemoveListener(callback.Invoke);
-            slider.onValueChanged.AddListener(callback.Invoke);
+            UnityAction<float> unityCallback = callback.Invoke;
 
-            _sliderBindings.Add((slider, callback));
+            slider.onValueChanged.RemoveListener(unityCallback);
+            slider.onValueChanged.AddListener(unityCallback);
+
+            _sliderBindings.Add((slider, unityCallback));
 
             AddBindingsInfo(BindComponetType.Slider, slider.gameObject.name, callback.Method.Name, slider);
         }
@@ -136,10 +146,12 @@
         {
             if (scrollbar == null || callback == null) return;
 
-            scrollbar.onValueChanged.RemoveListener(callback.Invoke);
-            scrollbar.onValueChanged.AddListener(callback.Invoke);
+            UnityAction<float> unityCallback = callback.Invoke;
 
-            _scrollbarBindings.Add((scrollbar, callback));
+            scrollbar.onValueChanged.RemoveListener(unityCallback);
+            scrollbar.onValueChanged.AddListener(unityCallback);
+
+            _scrollbarBindings.Add((scrollbar, unityCallback));
 
             AddBindingsInfo(BindComponetType.Scrollbar, scrollbar.gameObject.name, callback.Method.Name, scrollbar);
         }
@@ -148,17 +160,19 @@
         {
             if (inputField == null || callback == null) return;
 
+            UnityAction<string> unityCallback = callback.Invoke;
+
             if (isEndEdit)
             {
-                inputField.onEndEdit.RemoveListener(callback.Invoke);
-                inputField.onEndEdit.AddListener(callback.Invoke);
+                inputField.onEndEdit.RemoveListener(unityCallback);
+                inputField.onEndEdit.AddListener(unityCallback);
             } else
             {
-                inputField.onValueChanged.RemoveListener(callback.Invoke);
-                inputField.onValueChanged.AddListener(callback.Invoke);
+                inputField.onValueChanged.RemoveListener(unityCallback);
+                inputField.onValueChanged.AddListener(unityCallback);
             }
 
-            _inputBindings.Add((inputField, callback, isEndEdit));
+            _inputBindings.Add((inputField, unityCallback, isEndEdit));
 
             AddBindingsInfo(BindComponetType.InputField, inputField.gameObject.name, callback.Method.Name, inputField);
         }
@@ -167,17 +181,19 @@
         {
             if (inputField == null || callback == null) return;
 
+            UnityAction<string> unityCallback = callback.Invoke;
+
             if (isEndEdit)
             {
-                inputField.onEndEdit.RemoveListener(callback.Invoke);
-                inputField.onEndEdit.AddListener(callback.Invoke);
+                inputField.onEndEdit.RemoveListener(unityCallback);
+                inputField.onEndEdit.AddListener(unityCallback);
             } else
             {
-                inputField.onValueChanged.RemoveListener(callback.Invoke);
-                inputField.onValueChanged.AddListener(callback.Invoke);
+                inputField.onValueChanged.RemoveListener(unityCallback);
+                inputField.onValueChanged.AddListener(unityCallback);
             }
 
-            _tmpInputBindings.Add((inputField, callback, isEndEdit));
+            _tmpInputBindings.Add((inputField, unityCallback, isEndEdit));
 
             AddBindingsInfo(BindComponetType.TMP_InputField, inputField.gameObject.name, callback.Method.Name, inputField);
         }
@@ -186,10 +202,12 @@
         {
             if (dropdown == null || callback == null) return;
 
-            dropdown.onValueChanged.RemoveListener(callback.Invoke);
-            dropdown.onValueChanged.AddListener(callback.Invoke);
+            UnityAction<int> unityCallback = callback.Invoke;
 
-            _dropdownBindings.Add((dropdown, callback));
+            dropdown.onValueChanged.RemoveListener(unityCallback);
+            dropdown.onValueChanged.AddListener(unityCallback);
+
+            _dropdownBindings.Add((dropdown, unityCallback));
 
             AddBindingsInfo(BindComponetType.Dropdown, dropdown.gameObject.name, callback.Method.Name, dropdown);
         }
@@ -198,10 +216,12 @@
         {
             if (dropdown == null || callback == null) return;
 
-            dropdown.onValueChanged.RemoveListener(callback.Invoke);
-            dropdown.onValueChanged.AddListener(callback.Invoke);
+            UnityAction<int> unityCallback = callback.Invoke;
 
-            _tmpDropdownBindings.Add((dropdown, callback));
+            dropdown.onValueChanged.RemoveListener(unityCallback);
+            dropdown.onValueChanged.AddListener(unityCallback);
+
+            _tmpDropdownBindings.Add((dropdown, unityCallback));
 
             AddBindingsInfo(BindComponetType.TMP_Dropdown, dropdown.gameObject.name, callback.Method.Name, dropdown);
         }
@@ -210,10 +230,12 @@
         {
             if (scrollRect == null || callback == null) return;
 
-            scrollRect.onValueChanged.RemoveListener(callback.Invoke);
-            scrollRect.onValueChanged.AddListener(callback.Invoke);
+            UnityAction<Vector2> unityCallback = callback.Invoke;
 
-            _scrollRectBindings.Add((scrollRect, callback));
+            scrollRect.onValueChanged.RemoveListener(unityCallback);
+            scrollRect.onValueChanged.AddListener(unityCallback);
+
+            _scrollRectBindings.Add((scrollRect, unityCallback));
 
             AddBindingsInfo(BindComponetType.ScrollRect, scrollRect.gameObject.name, callback.Method.Name, scrollRect);
         }
@@ -395,10 +417,13 @@
             switch (type)
             {
                 // 这些没有事件绑定，字段绑定需要显示
+                case BindComponetType.Graphic:
+                case BindComponetType.MaskableGraphic:
                 case BindComponetType.Text:
                 case BindComponetType.TMP_Text:
                 case BindComponetType.TextMeshProUGUI:
                 case BindComponetType.Image:
+                case BindComponetType.RawImage:
                 case BindComponetType.RectTransform:
                 case BindComponetType.CanvasGroup:
                 case BindComponetType.Component:
@@ -414,8 +439,12 @@
             TMP_Text => BindComponetType.TMP_Text,
             Text => BindComponetType.Text,
             Image => BindComponetType.Image,
+            RawImage => BindComponetType.RawImage,
+            MaskableGraphic => BindComponetType.MaskableGraphic,
+            Graphic => BindComponetType.Graphic,
             RectTransform => BindComponetType.RectTransform,
             CanvasGroup => BindComponetType.CanvasGroup,
+
             Button => BindComponetType.Button,
             Toggle => BindComponetType.Toggle,
             Slider => BindComponetType.Slider,
@@ -638,7 +667,7 @@
                 var item = _buttonBindings[i];
                 if (item.btn != null)
                 {
-                    item.btn.onClick.RemoveListener(item.act.Invoke);
+                    item.btn.onClick.RemoveListener(item.act);
                 }
             }
 
@@ -647,7 +676,7 @@
                 var item = _toggleBindings[i];
                 if (item.tog != null)
                 {
-                    item.tog.onValueChanged.RemoveListener(item.act.Invoke);
+                    item.tog.onValueChanged.RemoveListener(item.act);
                 }
             }
 
@@ -656,7 +685,7 @@
                 var item = _sliderBindings[i];
                 if (item.sld != null)
                 {
-                    item.sld.onValueChanged.RemoveListener(item.act.Invoke);
+                    item.sld.onValueChanged.RemoveListener(item.act);
                 }
             }
 
@@ -665,7 +694,7 @@
                 var item = _scrollbarBindings[i];
                 if (item.sbr != null)
                 {
-                    item.sbr.onValueChanged.RemoveListener(item.act.Invoke);
+                    item.sbr.onValueChanged.RemoveListener(item.act);
                 }
             }
 
@@ -676,10 +705,10 @@
 
                 if (item.isEndEdit)
                 {
-                    item.field.onEndEdit.RemoveListener(item.act.Invoke);
+                    item.field.onEndEdit.RemoveListener(item.act);
                 } else
                 {
-                    item.field.onValueChanged.RemoveListener(item.act.Invoke);
+                    item.field.onValueChanged.RemoveListener(item.act);
                 }
             }
 
@@ -690,10 +719,10 @@
 
                 if (item.isEndEdit)
                 {
-                    item.field.onEndEdit.RemoveListener(item.act.Invoke);
+                    item.field.onEndEdit.RemoveListener(item.act);
                 } else
                 {
-                    item.field.onValueChanged.RemoveListener(item.act.Invoke);
+                    item.field.onValueChanged.RemoveListener(item.act);
                 }
             }
 
@@ -702,7 +731,7 @@
                 var item = _dropdownBindings[i];
                 if (item.dp != null)
                 {
-                    item.dp.onValueChanged.RemoveListener(item.act.Invoke);
+                    item.dp.onValueChanged.RemoveListener(item.act);
                 }
             }
 
@@ -711,7 +740,7 @@
                 var item = _tmpDropdownBindings[i];
                 if (item.dp != null)
                 {
-                    item.dp.onValueChanged.RemoveListener(item.act.Invoke);
+                    item.dp.onValueChanged.RemoveListener(item.act);
                 }
             }
 
@@ -720,9 +749,10 @@
                 var item = _scrollRectBindings[i];
                 if (item.srt != null)
                 {
-                    item.srt.onValueChanged.RemoveListener(item.act.Invoke);
+                    item.srt.onValueChanged.RemoveListener(item.act);
                 }
             }
+
             for (int i = 0; i < _adapterBindings.Count; i++)
             {
                 var item = _adapterBindings[i];
@@ -746,7 +776,10 @@
             _tmpDropdownBindings.Clear();
             _scrollRectBindings.Clear();
 
+#if UNITY_EDITOR
             _bindingsInfo.Clear();
+#endif
+
             if (clearCache)
             {
                 UIBindGeneratedUtil.ClearCache(_rootTransform);
